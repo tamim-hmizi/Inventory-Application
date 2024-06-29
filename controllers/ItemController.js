@@ -3,8 +3,18 @@ const Category = require('../models/category')
 const { body, validationResult } = require('express-validator')
 const asyncHandler = require('express-async-handler')
 
+exports.index = asyncHandler(async (req, res, next) => {
+    const nbCategories = await Category.countDocuments({}).exec()
+    const nbItems = await Item.countDocuments({}).exec()
+    res.render('index', {
+        title: 'Welcome to your inventory',
+        itemsNumber: nbItems,
+        categoriesNumber: nbCategories,
+    })
+})
+
 exports.item_list = asyncHandler(async (req, res, next) => {
-    const allItems = await Item.find().populate('category').exec()
+    const allItems = await Item.find({}, 'name').populate('category').exec()
     res.render('item_list', {
         title: 'Item List',
         item_list: allItems,
@@ -30,34 +40,22 @@ exports.item_create_get = asyncHandler(async (req, res, next) => {
 })
 
 exports.item_create_post = [
-    body('name')
+    body('name', 'Name must be specified.')
         .trim()
         .isLength({ min: 1 })
-        .escape()
-        .withMessage('Name must be specified.')
-        .isAlphanumeric()
-        .withMessage('Name has non-alphanumeric characters.'),
-    body('description')
-        .trim()
-        .isLength({ min: 1 })
-        .escape()
-        .withMessage('Description must be specified.')
-        .isAlphanumeric()
-        .withMessage('Description has non-alphanumeric characters.'),
-    body('category')
-        .trim()
-        .isLength({ min: 1 })
-        .escape()
-        .withMessage('Category must be specified.'),
-    body('price')
-        .trim()
-        .isNumeric()
-        .withMessage('Price must be a number.')
         .escape(),
-    body('numberInStock')
+    body('description', 'Description must be specified.')
+        .trim()
+        .isLength({ min: 1 })
+        .escape(),
+    body('category', 'Category must be specified.')
+        .trim()
+        .isLength({ min: 1 })
+        .escape(),
+    body('price', 'Price must be a number.').trim().isNumeric().escape(),
+    body('numberInStock', 'Number in stock must be a number.')
         .trim()
         .isNumeric()
-        .withMessage('Number in stock must be a number.')
         .escape(),
 
     asyncHandler(async (req, res, next) => {
@@ -97,8 +95,8 @@ exports.item_delete_get = asyncHandler(async (req, res, next) => {
 })
 
 exports.item_delete_post = asyncHandler(async (req, res, next) => {
-    await Item.findByIdAndRemove(req.body.itemid)
-    res.redirect('/items')
+    await Item.findByIdAndDelete(req.body.id)
+    res.redirect('/item/all')
 })
 
 exports.item_update_get = asyncHandler(async (req, res, next) => {
@@ -119,34 +117,22 @@ exports.item_update_get = asyncHandler(async (req, res, next) => {
 })
 
 exports.item_update_post = [
-    body('name')
+    body('name', 'Name must be specified.')
         .trim()
         .isLength({ min: 1 })
-        .escape()
-        .withMessage('Name must be specified.')
-        .isAlphanumeric()
-        .withMessage('Name has non-alphanumeric characters.'),
-    body('description')
-        .trim()
-        .isLength({ min: 1 })
-        .escape()
-        .withMessage('Description must be specified.')
-        .isAlphanumeric()
-        .withMessage('Description has non-alphanumeric characters.'),
-    body('category')
-        .trim()
-        .isLength({ min: 1 })
-        .escape()
-        .withMessage('Category must be specified.'),
-    body('price')
-        .trim()
-        .isNumeric()
-        .withMessage('Price must be a number.')
         .escape(),
-    body('numberInStock')
+    body('description', 'Description must be specified.')
+        .trim()
+        .isLength({ min: 1 })
+        .escape(),
+    body('category', 'Category must be specified.')
+        .trim()
+        .isLength({ min: 1 })
+        .escape(),
+    body('price', 'Price must be a number.').trim().isNumeric().escape(),
+    body('numberInStock', 'Number in stock must be a number.')
         .trim()
         .isNumeric()
-        .withMessage('Number in stock must be a number.')
         .escape(),
 
     asyncHandler(async (req, res, next) => {
@@ -169,7 +155,7 @@ exports.item_update_post = [
             })
             return
         } else {
-            await Item.findByIdAndUpdate(req.params.id, item)
+            await Item.findByIdAndUpdate(req.params.id, item, {})
             res.redirect(item.url)
         }
     }),

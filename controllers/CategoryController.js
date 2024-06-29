@@ -4,7 +4,7 @@ const { body, validationResult } = require('express-validator')
 const asyncHandler = require('express-async-handler')
 
 exports.category_list = asyncHandler(async (req, res, next) => {
-    const allCategories = Category.find().exec()
+    const allCategories = await Category.find({}, 'name').exec()
     res.render('category_list', {
         title: 'Category List',
         category_list: allCategories,
@@ -12,15 +12,10 @@ exports.category_list = asyncHandler(async (req, res, next) => {
 })
 
 exports.category_detail = asyncHandler(async (req, res, next) => {
-    const [category, allItemsByCategory] =
-        Promise.all()[
-            (Category.findById(req.params.id).exec(),
-            Item.find(
-                { Category: req.params.id },
-                'name',
-                'description'
-            )).exec()
-        ]
+    const [category, allItemsByCategory] = await Promise.all([
+        Category.findById(req.params.id).exec(),
+        Item.find({ category: req.params.id }, 'name').exec(),
+    ])
     if (category === null) {
         const err = new Error('Category not Found')
         err.status = 404
@@ -38,20 +33,14 @@ exports.category_create_get = (req, res, next) => {
 }
 
 exports.category_create_post = [
-    body('name')
+    body('name', 'Name must be specified.')
         .trim()
         .isLength({ min: 1 })
-        .escape()
-        .withMessage('Name must be specified.')
-        .isAlphanumeric()
-        .withMessage('Name has alphanumeric characters.'),
-    body('description')
+        .escape(),
+    body('description', 'Description must be specified.')
         .trim()
         .isLength({ min: 1 })
-        .escape()
-        .withMessage('Description must be specified.')
-        .isAlphanumeric()
-        .withMessage('Name has alphanumeric characters.'),
+        .escape(),
 
     asyncHandler(async (req, res, next) => {
         const errors = validationResult(req)
@@ -73,12 +62,12 @@ exports.category_create_post = [
     }),
 ]
 exports.category_delete_get = asyncHandler(async (req, res, next) => {
-    const [category, allItemsByCategory] = Promise.all([
+    const [category, allItemsByCategory] = await Promise.all([
         Category.findById(req.params.id).exec(),
         Item.find({ category: req.params.id }, 'name description').exec(),
     ])
     if (category === null) {
-        res.redirect('/categories')
+        res.redirect('/category/all')
     }
     res.render('category_delete', {
         title: 'Delete Category',
@@ -87,7 +76,7 @@ exports.category_delete_get = asyncHandler(async (req, res, next) => {
     })
 })
 exports.category_delete_post = asyncHandler(async (req, res, next) => {
-    const [category, allItemsByCategory] = Promise.all([
+    const [category, allItemsByCategory] = await Promise.all([
         Category.findById(req.params.id).exec(),
         Item.find({ category: req.params.id }, 'name description').exec(),
     ])
@@ -99,8 +88,8 @@ exports.category_delete_post = asyncHandler(async (req, res, next) => {
         })
         return
     } else {
-        await Category.findByIdAndRemove(req.body.categoryid)
-        res.redirect('/categories')
+        await Category.findByIdAndDelete(req.body.id)
+        res.redirect('/category/all')
     }
 })
 exports.category_update_get = asyncHandler(async (req, res, next) => {
@@ -117,20 +106,14 @@ exports.category_update_get = asyncHandler(async (req, res, next) => {
 })
 
 exports.category_update_post = [
-    body('name')
+    body('name', 'Name must be specified.')
         .trim()
         .isLength({ min: 1 })
-        .escape()
-        .withMessage('Name must be specified.')
-        .isAlphanumeric()
-        .withMessage('Name has alphanumeric characters.'),
-    body('description')
+        .escape(),
+    body('description', 'Description must be specified.')
         .trim()
         .isLength({ min: 1 })
-        .escape()
-        .withMessage('Description must be specified.')
-        .isAlphanumeric()
-        .withMessage('Name has alphanumeric characters.'),
+        .escape(),
     asyncHandler(async (req, res, next) => {
         const errors = validationResult(req)
         const category = new Category({
@@ -146,7 +129,7 @@ exports.category_update_post = [
             })
             return
         } else {
-            await category.save()
+            await Category.findByIdAndUpdate(req.params.id, category, {})
             res.redirect(category.url)
         }
     }),
