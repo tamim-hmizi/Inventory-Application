@@ -3,7 +3,7 @@ extends layout
 block content 
     h1= title 
     hr
-    form(method="POST")
+    form(method="POST" enctype="multipart/form-data")
         if errors
             ul
                 each error in errors
@@ -36,5 +36,7 @@ block content
         div.form-group
             label(for='numberInStock') Number in Stock:
             input#numberInStock.form-control(type='number' placeholder='Number in stock' name='numberInStock' required value=(undefined===item ? '' : item.numberInStock))
-        
+        div.form-group
+            label(for='imageUrl') Image:
+            input#imageUrl.form-control(type='file' name='imageUrl' required) 
         button.btn.btn-primary(type='submit') Submit

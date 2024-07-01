@@ -1,8 +1,9 @@
-extends layout 
+extends layout
 
-block content 
+block content
     h1= title
     hr
+    img(src=item.imageUrl width=200)
     h2= item.name
     if item.category
         a(href=item.category.url) (#{item.category.name})

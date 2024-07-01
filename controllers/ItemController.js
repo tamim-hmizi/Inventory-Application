@@ -2,6 +2,13 @@ const Item = require('../models/item')
 const Category = require('../models/category')
 const { body, validationResult } = require('express-validator')
 const asyncHandler = require('express-async-handler')
+const cloudinary = require('cloudinary')
+
+cloudinary.config({
+    cloud_name: process.env.cloud_name,
+    api_key: process.env.api_key,
+    api_secret: process.env.api_secret,
+})
 
 exports.index = asyncHandler(async (req, res, next) => {
     const nbCategories = await Category.countDocuments({}).exec()
@@ -60,12 +67,14 @@ exports.item_create_post = [
 
     asyncHandler(async (req, res, next) => {
         const errors = validationResult(req)
+        const uploadResult = await cloudinary.uploader.upload(req.file.path)
         const item = new Item({
             name: req.body.name,
             description: req.body.description,
             category: req.body.category,
             price: req.body.price,
             numberInStock: req.body.numberInStock,
+            imageUrl: uploadResult.url,
         })
         if (!errors.isEmpty()) {
             const categories = await Category.find().exec()
@@ -137,13 +146,15 @@ exports.item_update_post = [
 
     asyncHandler(async (req, res, next) => {
         const errors = validationResult(req)
+        const uploadResult = await cloudinary.uploader.upload(req.file.path)
         const item = new Item({
+            _id: req.params.id,
             name: req.body.name,
             description: req.body.description,
             category: req.body.category,
             price: req.body.price,
             numberInStock: req.body.numberInStock,
-            _id: req.params.id,
+            imageUrl: uploadResult.url,
         })
         if (!errors.isEmpty()) {
             const categories = await Category.find().exec()
